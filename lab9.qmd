@@ -1,0 +1,51 @@
+---
+title: "Lab 9: Generative Art"
+author: "Lily Cook"
+format: html
+editor: visual
+embed-resources: true
+---
+
+```{r}
+#| label: libraries
+#| message: false
+#| warning: false
+
+library(tidyverse)
+
+```
+
+## Midnight Stargazing 
+
+```{r}
+#| label: piece 1
+
+# generating random variables using various distributions
+w <- rpois(300, 70)
+x <- rgamma(300, 3)
+y <- rnorm(300, 50, 200)
+z <- rbinom(300, 200, 0.7)
+a <- sample(c('a', 'b', 'c'), replace = T, size = 300)
+
+data <- cbind(w, x, y, z, a) # combining into df
+
+
+# create gradient color pallete
+pal <- colorRampPalette(c("lightgoldenrod1","azure3", "slateblue"))
+
+art_colors <- pal(n_distinct(w))
+
+#plot
+
+ggplot(data, aes(x = y, y = z)) +
+  geom_point(aes(shape = a, color = w), show.legend = F, alpha = 0.9) + #add points
+  geom_line(aes(group = w, color = w), linetype = 3, show.legend = F, alpha = 0.3)+ # connect points
+  scale_shape_manual(values = c("a" = 20, "b" = 8, "c" = 21)) + # change shapes of points
+  scale_color_manual(values = art_colors) + # change colors
+  coord_radial() + #circle
+  theme_void() + #remove everything
+  theme(panel.background = element_rect(fill = "midnightblue", color = "midnightblue")) # background color
+
+```
+
+Gazing at the midnight stars, your eyes drift between the celestial bodies. The stars seem to be randomly scattered across the sky.....
