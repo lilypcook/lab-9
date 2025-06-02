@@ -4,6 +4,7 @@ author: "Lily Cook"
 format: html
 editor: visual
 embed-resources: true
+code-fold: true
 ---
 
 ```{r}
@@ -60,17 +61,15 @@ ggplot(data, aes(x = y, y = z)) +
 
 Gazing at the midnight stars, your eyes drift between the celestial bodies. The stars seem to be randomly scattered across the sky.....
 
-## Piece 2
+## Central Coast Spring
 
 ```{r}
 #| label: piece 2
+#| warning: false
 
-# function to create random palette from danielle workshop
-sample_canva2 <- function(seed = NULL, n = 4) {
-  if(!is.null(seed)) set.seed(seed)
-  sample(ggthemes::canva_palettes, 1)[[1]] |>
-    (\(x) colorRampPalette(x)(n))()  
-}
+# defining palette that I want
+my_pal <- c("#4A5d23", "#708238", "#568203","#8A9A5B", "#6B8E23", "#A0522D", "#8B4513", "#7e481c", "goldenrod1")
+
 
 
 # function to randomly select row from danielle
@@ -154,37 +153,6 @@ subdivision <- function(ncol = 1000,
   reduce(1:nsplits, split_block, .init = blocks)
 }
 
-
-# danielle function to create art
-develop <- function(div, seed = NULL) {
-  
-  div |> 
-    ggplot(aes(
-      xmin = left, 
-      xmax = right, 
-      ymin = bottom, 
-      ymax = top,
-      fill = value
-    )) +
-    geom_rect(
-      colour = "#fff", 
-      size = 3,
-      show.legend = FALSE
-    ) +
-    scale_fill_gradientn(
-      colours = sample_canva2(seed)
-    ) +
-    coord_equal() +
-    theme_void() +
-    theme(
-      plot.background = element_rect(
-        fill = "#fff"
-      )
-    ) 
-}
-
-#subdivision() |> develop() 
-
 # danielle function to fracture/ fill square basicall the start of the mosaic
 fill_rectangle <- function(left, right, bottom, top, width, 
                            height, area, value, nshades = 100) {
@@ -228,9 +196,8 @@ draw_mosaic <- function(dat, palette) {
     theme(plot.background = element_rect(fill = background)) 
 }
 
-# danielle function bringing it all together - edited palette
-my_pal <- c("#4A5d23", "#708238", "#568203","#8A9A5B", "#6B8E23", "#A0522D", "#8B4513", "#7e481c")
 
+# danielle function bringing it all together - edited palette
 mosaica <- function(ncol = 60, 
                     nrow = 60, 
                     nsplits = 30, 
@@ -240,10 +207,12 @@ mosaica <- function(ncol = 60,
     pmap_dfr(fill_rectangle) |> 
     slice_sample(prop = .995) |>
     filter(!is.na(fill)) |>
-    draw_mosaic(palette = my_pal)
+    draw_mosaic(palette = my_pal) #added my palette here for more control
 }
 
 
 
-mosaica(ncol = 100, nrow = 100, nsplits = 2000)
+mosaica(ncol = 200, nrow = 150, nsplits = 3000, seed = 541)
 ```
+
+Spring has arrived in the central coast of California. Green grass spreads across the hills dotted with yellow blooms.
