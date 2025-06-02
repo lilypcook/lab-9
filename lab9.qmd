@@ -59,7 +59,13 @@ ggplot(data, aes(x = y, y = z)) +
 
 ```
 
+#### Description
+
 Gazing at the midnight stars, your eyes drift between the celestial bodies. The stars seem to be randomly scattered across the sky.....
+
+#### Code choices
+
+By adding `coord_radial()`, the art piece now has a circular shape. Setting the background fill and color gives the same midnight blue color as the backdrop of the piece. Adjusting the alpha in the `geoms` adjusts the opacity of the shapes on the plot. `scale_color_manual` allows me to choose a palette and `scale_shape_manual` allows me to choose the shapes the points will be. Lastly, using `theme_void` removes all titles, axis lines, etc. to give the appearance of art.
 
 ## Central Coast Spring
 
@@ -182,7 +188,7 @@ fill_rectangle <- function(left, right, bottom, top, width,
 
 # danielle function to plot squares
 draw_mosaic <- function(dat, palette) {
-  background <- sample(palette[1:5], 1)
+  background <- sample(palette[1:5], 1) #edited
   dat |>
     ggplot(aes(x, y, fill = fill)) +
     geom_tile(show.legend = FALSE, colour = background, size = .2) +
@@ -215,4 +221,10 @@ mosaica <- function(ncol = 60,
 mosaica(ncol = 200, nrow = 150, nsplits = 3000, seed = 541)
 ```
 
+#### Description
+
 Spring has arrived in the central coast of California. Green grass spreads across the hills dotted with yellow blooms.
+
+#### Code Choices
+
+I decided to choose my own palette instead of allowing for a random palette as the shapes reminded me of fields. This was also more fun for me. I also edited the `background` call in the `draw_mosaic` function to select a green from the palette rather than the browns or yellow. In the function call to `mosaica`, `ncol` is set to 200, meaning the art will be 200 "pixels" wide, and `nrow` is set to 150, meaning the art will be 150 "pixels" tall. The `nsplits` argument is set to 3000, meaning the art will be divided into 300 "rectangles", though the nature of the mosaic allows for the shapes to be non-rectangular (or at least not perfectly rectangular). This is a large number of splits and allows for more "detail" in the drawing
