@@ -12,10 +12,20 @@ embed-resources: true
 #| warning: false
 
 library(tidyverse)
+library(tibble)
+library(ggforce)
+library(deldir)
+library(ggthemes)
+library(tictoc)
+library(ambient)
+library(purrr)
+library(tidyr)
+library(stringr)
+library(sf)
 
 ```
 
-## Midnight Stargazing 
+## Midnight Stargazing
 
 ```{r}
 #| label: piece 1
@@ -49,3 +59,191 @@ ggplot(data, aes(x = y, y = z)) +
 ```
 
 Gazing at the midnight stars, your eyes drift between the celestial bodies. The stars seem to be randomly scattered across the sky.....
+
+## Piece 2
+
+```{r}
+#| label: piece 2
+
+# function to create random palette from danielle workshop
+sample_canva2 <- function(seed = NULL, n = 4) {
+  if(!is.null(seed)) set.seed(seed)
+  sample(ggthemes::canva_palettes, 1)[[1]] |>
+    (\(x) colorRampPalette(x)(n))()  
+}
+
+
+# function to randomly select row from danielle
+choose_rectangle <- function(blocks) {
+  sample(nrow(blocks), 1, prob = blocks$area)
+}
+
+# function to randomly set rectangle breaks from danielle
+choose_break <- function(lower, upper) {
+  round((upper - lower) * runif(1))
+}
+
+# function to create tibble of rectangles from danielle
+create_rectangles <- function(left, right, bottom, top, value) {
+  tibble(
+    left = left,
+    right = right,
+    bottom = bottom,
+    top = top,
+    width = right - left,
+    height = top - bottom,
+    area = width * height,
+    value = value
+  )
+}
+
+# danielle function to split rectangle horizontally
+split_rectangle_x <- function(rectangle, new_value) {
+  with(rectangle, {
+    split <- choose_break(left, right)
+    new_left  <- c(left, left + split)
+    new_right <- c(left + split, right)
+    new_value <- c(value, new_value)
+    create_rectangles(new_left, new_right, bottom, top, new_value)
+  })
+}
+
+# danielle function to split rectangle vertically
+split_rectangle_y <- function(rectangle, new_value) {
+  with(rectangle, {
+    split <- choose_break(bottom, top)
+    new_bottom <- c(bottom, bottom + split)
+    new_top <- c(bottom + split, top)
+    new_value <- c(value, new_value)
+    create_rectangles(left, right, new_bottom, new_top, new_value)
+  })
+}
+
+# danielle function combining the two split functions
+
+split_rectangle <- function(rectangle, value) {
+  if(runif(1) < .5) {
+    return(split_rectangle_x(rectangle, value))
+  }
+  split_rectangle_y(rectangle, value)
+}
+
+# danielle function to randomly split rectangle
+split_block <- function(blocks, value) {
+  old <- choose_rectangle(blocks) 
+  new <- split_rectangle(blocks[old, ], value)
+  bind_rows(blocks[-old, ], new)
+}
+
+
+# danielle function to repeatedly divide rectangles
+
+subdivision <- function(ncol = 1000, 
+                        nrow = 1000, 
+                        nsplits = 50, 
+                        seed = NULL) {
+  
+  if(!is.null(seed)) set.seed(seed)
+  blocks <- create_rectangles(
+    left = 1, 
+    right = ncol, 
+    bottom = 1, 
+    top = nrow, 
+    value = 0
+  )
+  reduce(1:nsplits, split_block, .init = blocks)
+}
+
+
+# danielle function to create art
+develop <- function(div, seed = NULL) {
+  
+  div |> 
+    ggplot(aes(
+      xmin = left, 
+      xmax = right, 
+      ymin = bottom, 
+      ymax = top,
+      fill = value
+    )) +
+    geom_rect(
+      colour = "#fff", 
+      size = 3,
+      show.legend = FALSE
+    ) +
+    scale_fill_gradientn(
+      colours = sample_canva2(seed)
+    ) +
+    coord_equal() +
+    theme_void() +
+    theme(
+      plot.background = element_rect(
+        fill = "#fff"
+      )
+    ) 
+}
+
+#subdivision() |> develop() 
+
+# danielle function to fracture/ fill square basicall the start of the mosaic
+fill_rectangle <- function(left, right, bottom, top, width, 
+                           height, area, value, nshades = 100) {
+  
+  set.seed(value)
+  fractals <- list(billow, fbm, ridged)
+  generators <- list(gen_simplex, gen_perlin, gen_worley)
+  
+  expand_grid(
+    x = left:right, 
+    y = bottom:top, 
+  ) |>
+    mutate(
+      fill = 10 * value + fracture(
+        x = x * sample(-3:3, 1),
+        y = y * sample(-3:3, 1),
+        noise = sample(generators, 1)[[1]],
+        fractal = sample(fractals, 1)[[1]],
+        octaves = sample(10, 1),
+        frequency = sample(10, 1) / 20,
+        value = "distance2"
+      ) |>
+        normalise(to = c(1, nshades)) |> 
+        round()
+    )
+}
+
+# danielle function to plot squares
+draw_mosaic <- function(dat, palette) {
+  background <- sample(palette[1:5], 1)
+  dat |>
+    ggplot(aes(x, y, fill = fill)) +
+    geom_tile(show.legend = FALSE, colour = background, size = .2) +
+    scale_size_identity() +
+    scale_colour_gradientn(colours = palette) +
+    scale_fill_gradientn(colours = palette) +
+    scale_x_continuous(expand = expansion(add = 5)) +
+    scale_y_continuous(expand = expansion(add = 5)) +
+    coord_equal() +
+    theme_void() +
+    theme(plot.background = element_rect(fill = background)) 
+}
+
+# danielle function bringing it all together - edited palette
+my_pal <- c("#4A5d23", "#708238", "#568203","#8A9A5B", "#6B8E23", "#A0522D", "#8B4513", "#7e481c")
+
+mosaica <- function(ncol = 60, 
+                    nrow = 60, 
+                    nsplits = 30, 
+                    seed = NULL) {
+  
+  subdivision(ncol, nrow, nsplits, seed) |>
+    pmap_dfr(fill_rectangle) |> 
+    slice_sample(prop = .995) |>
+    filter(!is.na(fill)) |>
+    draw_mosaic(palette = my_pal)
+}
+
+
+
+mosaica(ncol = 100, nrow = 100, nsplits = 2000)
+```
